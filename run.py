@@ -7,7 +7,7 @@ from config import EXTENSIONS
 class ProjectPL (commands.Bot) : 
     def __init__ (self) :
         super().__init__ (
-            command_prefix=["$", "~"]
+            command_prefix=["~"]
         )
         self.remove_command("help")
 

@@ -9,7 +9,7 @@ class Music(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self._ = botID
-        self.normal_color = 0x61acf8
+        self.normal_color = 0x00fa6c
         self.error_color = 0xff4a4a
         self.warn_color = 0xf7f253
         if not hasattr(bot, 'lavalink'):  # This ensures the client isn't overwritten during cog reloads.
@@ -49,7 +49,7 @@ class Music(commands.Cog):
         results = await player.node.get_tracks(query)
         if not results or not results['tracks']:
             return await ctx.send('Nothing found!')
-        embed = discord.Embed(color=discord.Color.blurple())
+        embed = discord.Embed(color=self.normal_color)
         if results['loadType'] == 'PLAYLIST_LOADED':
             tracks = results['tracks']
             for track in tracks:
@@ -199,18 +199,18 @@ class Music(commands.Cog):
         player = self.bot.lavalink.players.create(ctx.guild.id, endpoint=str(ctx.guild.region))
         should_connect = ctx.command.name in ('play')  
         if not ctx.author.voice or not ctx.author.voice.channel:
-            raise commands.CommandInvokeError('Join a voicechannel first.')
+            raise commands.CommandInvokeError('먼저 음성 채널에 들어와주세요.')
         if not player.is_connected:
             if not should_connect:
                 raise commands.CommandInvokeError('Not connected.')
             permissions = ctx.author.voice.channel.permissions_for(ctx.me)
             if not permissions.connect or not permissions.speak:  
-                raise commands.CommandInvokeError('I need the `CONNECT` and `SPEAK` permissions.')
+                raise commands.CommandInvokeError('권한이 없습니다! (Connect, Speak 권한을 주세요!)')
             player.store('channel', ctx.channel.id)
             await self.connect_to(ctx.guild.id, str(ctx.author.voice.channel.id))
         else:
             if int(player.channel_id) != ctx.author.voice.channel.id:
-                raise commands.CommandInvokeError('You need to be in my voicechannel.')
+                raise commands.CommandInvokeError('다른 음성 채널에 있어요! 제가 있는 음성 채널로 와주세요.')
 
 
 def setup(bot):
