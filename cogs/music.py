@@ -4,6 +4,7 @@ import discord
 import lavalink
 from discord.ext import commands
 from config import botID
+
 url_rx = re.compile('https?:\\/\\/(?:www\\.)?.+')  # noqa: W605
 class Music(commands.Cog):
     def __init__(self, bot):
@@ -26,10 +27,6 @@ class Music(commands.Cog):
         if guild_check:
             await self.ensure_voice(ctx)
         return guild_check
-
-    async def cog_command_error(self, ctx, error):
-        if isinstance(error, commands.CommandInvokeError):
-            await ctx.send(error.original)
 
     async def track_hook(self, event):
         if isinstance(event, lavalink.events.QueueEndEvent):
@@ -54,36 +51,40 @@ class Music(commands.Cog):
             tracks = results['tracks']
             for track in tracks:
                 player.add(requester=ctx.author.id, track=track)
-            embed.title = 'Playlist Enqueued!'
-            embed.description = f'{results["playlistInfo"]["name"]} - {len(tracks)} tracks'
+            embed.title = '플레이 리스트 로드 완료!'
+            embed.description = '성공적으로 플레이리스트를 로드했습니다.'
+            embed.add_field (name = "이름", value=f'{results["playlistInfo"]["name"]}', inline=False)
+            embed.add_field (name="곡 수", value=str(len(tracks)), inline=False)
         else:
             track = results['tracks'][0]
-            embed.title = 'Track Enqueued'
-            embed.description = f'[{track["info"]["title"]}]({track["info"]["uri"]})'
+            embed.title = '트랙 로드 완료!'
+            embed.description = '성공적으로 트랙을 로드했습니다!'
+            embed.add_field (name="이름", value=f'{track["info"]["title"]}', inline=False)
+            embed.add_field (name="URL", value=f'[클릭]({track["info"]["uri"]})', inline=False)
             player.add(requester=ctx.author.id, track=track)
         await ctx.send(embed=embed)
         if not player.is_playing:
             await player.play()
 
-    @commands.command()
-    async def seek(self, ctx, *, seconds: int):
-        player = self.bot.lavalink.players.get(ctx.guild.id)
-        track_time = player.position + (seconds * 1000)
-        await player.seek(track_time)
-        await ctx.send(f'Moved track to **{lavalink.utils.format_time(track_time)}**')
+    #@commands.command()
+    #async def seek(self, ctx, *, seconds: int):
+    ##    player = self.bot.lavalink.players.get(ctx.guild.id)
+    #    track_time = player.position + (seconds * 1000)
+    #    await player.seek(track_time)
+    #    await ctx.send(f'Moved track to **{lavalink.utils.format_time(track_time)}**')
 
     @commands.command(aliases=['forceskip'])
     async def skip(self, ctx):
         player = self.bot.lavalink.players.get(ctx.guild.id)
         if not player.is_playing:
-            return await ctx.send('Not playing.')
+            return await ctx.send('플레이 중이지 않습니다.')
         await player.skip()
 
     @commands.command()
     async def stop(self, ctx):
         player = self.bot.lavalink.players.get(ctx.guild.id)
         if not player.is_playing:
-            return await ctx.send('Not playing.')
+            return await ctx.send('플레이 중이지 않습니다.')
         player.queue.clear()
         await player.stop()
 
@@ -92,7 +93,7 @@ class Music(commands.Cog):
     async def now(self, ctx):
         player = self.bot.lavalink.players.get(ctx.guild.id)
         if not player.current:
-            return await ctx.send('Nothing playing.')
+            return await ctx.send('재생 중인 것이 없습니다.')
         position = lavalink.utils.format_time(player.position)
         if player.current.stream:
             duration = '🔴 LIVE'
@@ -107,7 +108,7 @@ class Music(commands.Cog):
     async def queue(self, ctx, page: int = 1):
         player = self.bot.lavalink.players.get(ctx.guild.id)
         if not player.queue:
-            return await ctx.send('Nothing queued.')
+            return await ctx.send('재생목록에 아무것도 없습니다.')
         items_per_page = 10
         pages = math.ceil(len(player.queue) / items_per_page)
         start = (page - 1) * items_per_page
@@ -124,7 +125,7 @@ class Music(commands.Cog):
     async def pause(self, ctx):
         player = self.bot.lavalink.players.get(ctx.guild.id)
         if not player.is_playing:
-            return await ctx.send('Not playing.')
+            return await ctx.send('플레이 중이지 않습니다.')
         if player.paused:
             await player.set_pause(False)
             await ctx.send('⏯ | Resumed')
@@ -144,7 +145,7 @@ class Music(commands.Cog):
     async def shuffle(self, ctx):
         player = self.bot.lavalink.players.get(ctx.guild.id)
         if not player.is_playing:
-            return await ctx.send('Nothing playing.')
+            return await ctx.send('재생 중인 것이 없습니다.')
         player.shuffle = not player.shuffle
         await ctx.send('🔀 | Shuffle ' + ('enabled' if player.shuffle else 'disabled'))
 
@@ -152,7 +153,7 @@ class Music(commands.Cog):
     async def repeat(self, ctx):
         player = self.bot.lavalink.players.get(ctx.guild.id)
         if not player.is_playing:
-            return await ctx.send('Nothing playing.')
+            return await ctx.send('재생 중인 것이 없습니다.')
         player.repeat = not player.repeat
         await ctx.send('🔁 | Repeat ' + ('enabled' if player.repeat else 'disabled'))
 
@@ -160,7 +161,7 @@ class Music(commands.Cog):
     async def remove(self, ctx, index: int):
         player = self.bot.lavalink.players.get(ctx.guild.id)
         if not player.queue:
-            return await ctx.send('Nothing queued.')
+            return await ctx.send('재생목록에 아무것도 없습니다.')
         if index > len(player.queue) or index < 1:
             return await ctx.send(f'Index has to be **between** 1 and {len(player.queue)}')
         removed = player.queue.pop(index - 1)  # Account for 0-index.
